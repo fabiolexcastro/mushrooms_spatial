@@ -1,19 +1,15 @@
 
-
 # Load libraries ----------------------------------------------------------
 require(pacman)
 pacman::p_load(raster, terra, openxlsx, readxl, rgdal, rgeos, stringr, sf, tidyverse, fs, glue)
 
-g <- gc(reset = TRUE); rm(list = ls()); options(scipen = 999, warn = -1)
+g <- gc(reset = TRUE); rm(list = ls()); options(scipen = 999, warn = -1, encoding = 'latin1')
 
 # Load data ---------------------------------------------------------------
 path <- 'E:/asesorias/byron/data/sh_tutoria_R_oct_2022'
+argt <- glue('{path}/area_pais_arg/') %>% dir_ls(., regexp = '.shp$') %>% st_read()
 
 dir_ls(path) %>% as.character()
-
-# Matrix ambiental season 
-mtrx <- grep('season.xlsx$', dir_ls(path), value = TRUE) %>% as.character()
-mtrx <- read_excel(mtrx)
 
 #  To make study area -----------------------------------------------------
 dirs <- dir_ls(path) %>% 
@@ -30,6 +26,8 @@ for(i in 1:length(shpf)){
 shpf <- bind_rows(shpf)
 dout <- './gpkg/base'
 st_write(shpf, './gpkg/base/study_zone_areasp.gpkg')
+
+shpf <- st_read('./gpkg/base/study_zone_areasp.gpkg')
 
 # To join all the tables into only one ------------------------------------
 fles <- dir_ls(path) %>% grep('tabs', ., value = T) %>% as.character() %>% dir_ls() %>% grep('.xlsx$', ., value = T) %>% as.character()
@@ -48,3 +46,19 @@ tbls <- purrr::map_dfr(.x = 1:length(fles), .f = function(i){
 
 dout <- './tble/points'
 write.xlsx(x = tbls, file = glue('{dout}/all_points.xlsx'))
+
+tbls
+
+# Table to points
+pnts <- st_as_sf(tbls, coords = c('coor_x', 'coor_y'), crs = st_crs(4326))
+
+# To write this shapefile
+st_write(pnts, './gpkg/points.gpkg')
+
+# To check the points 
+plot(st_geometry(argt))
+points(tbls$coor_x, tbls$coor_y, pch = 16, col = 'red')
+
+plot(st_geometry(shpf))
+points(tbls$coor_x, tbls$coor_y, pch = 16, col = 'red')
+
