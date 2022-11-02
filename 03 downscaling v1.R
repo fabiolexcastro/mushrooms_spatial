@@ -1,5 +1,4 @@
 
-
 # Load libraries ----------------------------------------------------------
 require(pacman)
 pacman::p_load(raster, elevatr, terra, gtools, climateR, openxlsx, RSAGA, readxl, rgdal, rgeos, stringr, sf, tidyverse, fs, glue)
@@ -36,14 +35,16 @@ for(i in 1:length(Dates)){
 
 # List the files again ----------------------------------------------------
 fles <- dir_ls('./tif/terraclimate/extent/individual') %>% as.character() %>% mixedsort()
-srtm <- './tif/srtm/srtm_150m_fill.tif'
+fles <- fles[-grep('gwr_raw', fles, value = F)]
+fles <- grep('.tif$', fles, value = T)
+srtm <- './tif/srtm/srtm_305m_fill.tif'
 envr <- rsaga.env(path = 'C:/saga-8.0.0_x64')
 
 purrr::map(.x = 1:length(fles), .f = function(i){
   
   cat(basename(fles[i]), '\t')
   fInp <- fles[i]
-  fOut <- glue('{dirname(fInp)}/{basename(fInp) %>% gsub(".tif", "_gwr_raw.tif", .)}')
+  fOut <- glue('{dirname(fInp)}/{basename(fInp) %>% gsub(".tif", "_gwr_raw_305m.tif", .)}')
   rsaga.geoprocessor(lib = 'statistics_regression', module = 'GWR for Grid Downscaling', param = list(PREDICTORS = srtm, REGRESSION = fOut, DEPENDENT = fInp), env = envr)
   cat('Done\n')
 
