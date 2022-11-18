@@ -33,10 +33,12 @@ srad <- terra::crop(srad, zone)
 plot(srad[[1]])
 plot(st_geometry(wrld), add = TRUE)
 
+srd
+
 # Function ----------------------------------------------------------------
 calcETP <- function(year){
   
-  year <- 2016
+  year <- 2019
   cat(year, '\n')
   ppt <- grep(year, prec, value = T)
   ppt <- terra::rast(ppt)
@@ -58,7 +60,7 @@ calcETP <- function(year){
   etp <- etp * c(31,29,31,30,31,30,31,31,30,31,30,31)
   out <- './tif/terraclimate/extent/individual'
   
-  purrr::map(.x = 1:nlayers(etp), .f = function(j){
+  purrr::map(.x = 1:nlyr(etp), .f = function(j){
     raster::writeRaster(x = etp[[j]], filename = glue('{out}/etp_{year}_{j}.tif'), overwrite = TRUE)  
   })
   
@@ -68,5 +70,5 @@ calcETP <- function(year){
 }
 
 # Apply the function ------------------------------------------------------
-etps <- map(2016:2019, calcETP)
+etps <- map(2017:2019, calcETP)
 
