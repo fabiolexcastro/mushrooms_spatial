@@ -24,7 +24,7 @@ rgns$gid <- 1:nrow(rgns)
 # To calculate bioclimatic normal variables
 makeBIOS <- function(yr){
   
-  yr <- 2016
+  yr <- 2017
   
   cat('Start ', yr, '\n')
   ppt <- grep(yr, prec, value = TRUE)
@@ -37,7 +37,7 @@ makeBIOS <- function(yr){
   tmn <- raster::stack(tmn)
   
   # To calculate bioclimatic variables 
-  purrr::map(.x = 1:nrow(rgns), .f = function(i){
+  purrr::map(.x = 1:nrow(rgns), .f = function(z){
     
     cat(z, '\n') 
     rgn <- rgns[z,]
@@ -45,13 +45,42 @@ makeBIOS <- function(yr){
     tx  <- raster::crop(tmx, as(rgn, 'Spatial')) %>% raster::mask(., as(rgn, 'Spatial'))
     tn  <- raster::crop(tmn, as(rgn, 'Spatial')) %>% raster::mask(., as(rgn, 'Spatial'))
     bi  <- dismo::biovars(prec = pp, tmax = tx, tmin = tn)
-    ou  <- glue('tif/terraclimate/extent/individual/zones/bios_{rgn$gid}.tif')
+    ou  <- glue('tif/terraclimate/extent/individual/zones/v2/bios_{rgn$gid}_{yr}.tif')
     raster::writeRaster(x = bi, filename = ou, overwrite = TRUE)
     cat('Done!\n')
     
   })
   
-
-  
 }
+
+rstr <- terra::rast('tif/terraclimate/extent/individual/zones/v2/bios_1_2016.tif')
+
+# Mosaicking each bioclimatic var 
+vars <- glue('bios_{1:19}') %>% as.character()
+fles <- dir_ls('./tif/terraclimate/extent/individual/zones/v2', regexp = '.tif$') %>% as.character() %>% grep(paste0(vars, collapse = '|'), ., value = T)
+# i <- 6; j <- 4
+yrs <- 2016:2019
+
+purrr::map(.x = 1:length(yrs), .f = function(i){ # ciclo por variable, (bio 21 a bio 29)
+  
+  cat('Start ', yrs[i], '\n')
+  fls <- grep(yrs[i], fles, value = T)
+  rst <- map(fls, rast)
+  
+  purrr::map(.x = 2:19, .f = function(j){ # ciclo por ano, (2016 a 2019)
+    
+    cat(vars[j], '\t')
+    lst <- map(.x = 1:length(rst), .f = function(k) rst[[k]][[j]])
+    lst <- sprc(lst)
+    msc <- terra::mosaic(lst)
+    out <- glue('./tif/terraclimate/extent/individual/bios/v2/{vars[j]}_{yrs[i]}.tif')
+    terra::writeRaster(x = msc, filename = out, overwrite = TRUE)
+    rm(lst, msc); gc()
+    Sys.sleep(2)
+    cat('Done!\n')
+    
+  })
+  
+})
+
 
